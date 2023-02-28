@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -84,6 +86,10 @@ func New(l log.Logger, c Config, debug bool) (*Backend, error) {
 
 // Get writes downloaded content to the given writer.
 func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for s3 is ", p)
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(b.bucket),
 		Key:    aws.String(p),
@@ -120,6 +126,10 @@ func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
 
 // Put uploads contents of the given reader.
 func (b *Backend) Put(ctx context.Context, p string, r io.Reader) error {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for s3 is ", p)
 	var (
 		uploader = s3manager.NewUploaderWithClient(b.client)
 		in       = &s3manager.UploadInput{
@@ -143,6 +153,10 @@ func (b *Backend) Put(ctx context.Context, p string, r io.Reader) error {
 
 // Exists checks if object already exists.
 func (b *Backend) Exists(ctx context.Context, p string) (bool, error) {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for s3 is ", p)
 	in := &s3.HeadObjectInput{
 		Bucket: aws.String(b.bucket),
 		Key:    aws.String(p),
