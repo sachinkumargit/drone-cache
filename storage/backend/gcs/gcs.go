@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	gcstorage "cloud.google.com/go/storage"
@@ -65,6 +67,11 @@ func New(l log.Logger, c Config) (*Backend, error) {
 
 // Get writes downloaded content to the given writer.
 func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for gcp is ", p)
+	
 	errCh := make(chan error)
 
 	go func() {
@@ -103,6 +110,11 @@ func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
 
 // Put uploads contents of the given reader.
 func (b *Backend) Put(ctx context.Context, p string, r io.Reader) error {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for gcp is ", p)
+
 	errCh := make(chan error)
 
 	go func() {
@@ -145,6 +157,11 @@ func (b *Backend) Put(ctx context.Context, p string, r io.Reader) error {
 
 // Exists checks if object already exists.
 func (b *Backend) Exists(ctx context.Context, p string) (bool, error) {
+	if runtime.GOOS == "windows" {
+		p = strings.Replace(p, string(filepath.Separator), "/", -1)
+	}
+	level.Info(b.logger).Log("remote key for gcp is ", p)
+
 	type result struct {
 		val bool
 		err error
