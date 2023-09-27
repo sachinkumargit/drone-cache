@@ -8,12 +8,15 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/meltwater/drone-cache/internal"
+	"github.com/meltwater/drone-cache/utils"
 )
 
 const (
@@ -98,6 +101,7 @@ func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
 		var err error
 
 		if b.cfg.CDNHost != "" {
+			b.logger.Log("using cdn to download cache")
 			filename := filepath.Base(p)
 			cacheKey := filepath.Base(filepath.Dir(p))
 			remoteRoot := filepath.Dir(filepath.Dir(p))
@@ -112,12 +116,8 @@ func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
 				errCh <- fmt.Errorf("sas query params, %w", err)
 				return
 			}
-			req, err := http.NewRequest(http.MethodGet, reqURL, http.NoBody)
-			if err != nil {
-				errCh <- fmt.Errorf("cdn request, %w", err)
-				return
-			}
-			resp, err := b.httpClient.Do(req)
+			retriableClient := utils.GetRetriableClient(b.cfg.MaxRetryRequests, b.cfg.Timeout, nil)
+			resp, err := retriableClient.Get(reqURL)
 			if err != nil {
 				errCh <- fmt.Errorf("get object from cdn, %w", err)
 				return
@@ -187,6 +187,12 @@ func (b *Backend) Exists(ctx context.Context, p string) (bool, error) {
 
 // Exists checks if path already exists.
 func (b *Backend) generateSASTokenWithCDN(containerName, blobPath string) (string, error) {
+
+	if runtime.GOOS == "windows" {
+		containerName = strings.Replace(containerName, "\\", "/", -1) // Replace backslashes with forward slashes
+		blobPath = strings.Replace(blobPath, "\\", "/", -1)           // Replace backslashes with forward slashes
+	}
+
 	sasDefaultSignature := azblob.BlobSASSignatureValues{
 		Protocol:      azblob.SASProtocolHTTPS,
 		ExpiryTime:    time.Now().UTC().Add(12 * time.Hour),
