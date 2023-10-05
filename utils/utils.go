@@ -14,6 +14,7 @@ func GetRetriableClient(retryMaxCount int, timeout time.Duration, checkRetry ret
 	retryClient.RetryWaitMax = 30 * time.Second
 	retryClient.RetryMax = retryMaxCount
 	retryClient.HTTPClient.Timeout = timeout
+	retryClient.Logger = nil
 	if checkRetry != nil {
 		retryClient.CheckRetry = checkRetry
 	} else {
