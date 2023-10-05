@@ -101,7 +101,7 @@ func (b *Backend) Get(ctx context.Context, p string, w io.Writer) error {
 		var err error
 
 		if b.cfg.CDNHost != "" {
-			b.logger.Log("using cdn to download cache")
+			b.logger.Log("msg", "using cdn host")
 			filename := filepath.Base(p)
 			cacheKey := filepath.Base(filepath.Dir(p))
 			remoteRoot := filepath.Dir(filepath.Dir(p))
