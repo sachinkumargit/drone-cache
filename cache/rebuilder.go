@@ -35,7 +35,7 @@ func NewRebuilder(logger log.Logger, s storage.Storage, a archive.Archive, g key
 }
 
 // Rebuild rebuilds cache from the files provided with given paths.
-func (r rebuilder) Rebuild(srcs []string) error {
+func (r rebuilder) Rebuild(srcs []string, mockDownloadUpload bool) error {
 	level.Info(r.logger).Log("msg", "rebuilding cache")
 
 	now := time.Now()
@@ -77,7 +77,7 @@ func (r rebuilder) Rebuild(srcs []string) error {
 		go func(dst, src string) {
 			defer wg.Done()
 
-			if err := r.rebuild(src, dst); err != nil {
+			if err := r.rebuild(src, dst, mockDownloadUpload); err != nil {
 				errs.Add(fmt.Errorf("upload from <%s> to <%s>, %w", src, dst, err))
 			}
 		}(dst, src)
@@ -95,7 +95,7 @@ func (r rebuilder) Rebuild(srcs []string) error {
 }
 
 // rebuild pushes the archived file to the cache.
-func (r rebuilder) rebuild(src, dst string) error {
+func (r rebuilder) rebuild(src, dst string, mockDownloadUpload bool) error {
 	src, err := filepath.Abs(filepath.Clean(src))
 	if err != nil {
 		return fmt.Errorf("clean source path, %w", err)
@@ -111,6 +111,9 @@ func (r rebuilder) rebuild(src, dst string) error {
 
 		level.Info(r.logger).Log("msg", "archiving directory", "src", src)
 
+		if mockDownloadUpload {
+			return
+		}
 		written, err := r.a.Create([]string{src}, pw)
 		if err != nil {
 			if err := pw.CloseWithError(fmt.Errorf("archive write, pipe writer failed, %w", err)); err != nil {
@@ -126,6 +129,13 @@ func (r rebuilder) rebuild(src, dst string) error {
 	sw := &statWriter{}
 	tr := io.TeeReader(pr, sw)
 
+	if mockDownloadUpload {
+		level.Debug(r.logger).Log(
+			"msg", "archive created",
+			"local", src,
+			"remote", dst,
+		)
+	}
 	if err := r.s.Put(dst, tr); err != nil {
 		err = fmt.Errorf("upload file, pipe reader failed, %w", err)
 		if err := pr.CloseWithError(err); err != nil {

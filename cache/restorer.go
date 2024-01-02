@@ -32,7 +32,7 @@ func NewRestorer(logger log.Logger, s storage.Storage, a archive.Archive, g key.
 }
 
 // Restore restores files from the cache provided with given paths.
-func (r restorer) Restore(dsts []string) error {
+func (r restorer) Restore(dsts []string, mockDownloadUpload bool) error {
 	level.Info(r.logger).Log("msg", "restoring  cache")
 
 	now := time.Now()
@@ -57,7 +57,7 @@ func (r restorer) Restore(dsts []string) error {
 		go func(src, dst string) {
 			defer wg.Done()
 
-			if err := r.restore(src, dst); err != nil {
+			if err := r.restore(src, dst, mockDownloadUpload); err != nil {
 				errs.Add(fmt.Errorf("download from <%s> to <%s>, %w", src, dst, err))
 			}
 		}(src, dst)
@@ -75,7 +75,7 @@ func (r restorer) Restore(dsts []string) error {
 }
 
 // restore fetches the archived file from the cache and restores to the host machine's file system.
-func (r restorer) restore(src, dst string) error {
+func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 	var err error
 
 	pr, pw := io.Pipe()
@@ -86,6 +86,9 @@ func (r restorer) restore(src, dst string) error {
 
 		level.Info(r.logger).Log("msg", "downloading archived directory", "remote", src, "local", dst)
 
+		if mockDownloadUpload {
+			return
+		}
 		if err := r.s.Get(src, pw); err != nil {
 			if err := pw.CloseWithError(fmt.Errorf("get file from storage backend, pipe writer failed, %w", err)); err != nil {
 				level.Error(r.logger).Log("msg", "pw close", "err", err)
@@ -94,6 +97,15 @@ func (r restorer) restore(src, dst string) error {
 	}()
 
 	level.Info(r.logger).Log("msg", "extracting archived directory", "remote", src, "local", dst)
+
+	if mockDownloadUpload {
+		level.Debug(r.logger).Log(
+			"msg", "archive extracted",
+			"local", dst,
+			"remote", src,
+		)
+		return nil
+	}
 
 	written, err := r.a.Extract(dst, pr)
 	if err != nil {

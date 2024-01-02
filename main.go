@@ -268,6 +268,12 @@ func main() {
 			Value:   true,
 			EnvVars: []string{"PLUGIN_OVERRIDE"},
 		},
+		&cli.BoolFlag{
+			Name:    "mock-download-upload, mkdu",
+			Usage:   "skip downloading and uploading the cache, useful when you want to only display mocked cache logs",
+			EnvVars: []string{"PLUGIN_SKIP_DOWNLOAD"},
+			Value:   false,
+		},
 		// CACHE-KEYS
 		// REBUILD-KEYS
 		// RESTORE-KEYS
@@ -559,6 +565,8 @@ func run(c *cli.Context) error {
 		RemoteRoot:       c.String("remote-root"),
 		LocalRoot:        c.String("local-root"),
 		Override:         c.Bool("override"),
+
+		MockDownloadUpload: c.Bool("mock-download-upload"),
 
 		StorageOperationTimeout: c.Duration("backend.operation-timeout"),
 		FileSystem: filesystem.Config{
