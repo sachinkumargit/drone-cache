@@ -135,6 +135,7 @@ func (r rebuilder) rebuild(src, dst string, mockDownloadUpload bool) error {
 			"local", src,
 			"remote", dst,
 		)
+		return nil
 	}
 	if err := r.s.Put(dst, tr); err != nil {
 		err = fmt.Errorf("upload file, pipe reader failed, %w", err)
