@@ -20,13 +20,13 @@ type Cache interface {
 // Rebuilder is an interface represents a rebuild action.
 type Rebuilder interface {
 	// Rebuild rebuilds cache from the files provided with given paths.
-	Rebuild(srcs []string) error
+	Rebuild(srcs []string, mockDownloadUpload bool) error
 }
 
 // Restorer is an interface represents a restore action.
 type Restorer interface {
 	// Restore restores files from the cache provided with given paths.
-	Restore(srcs []string) error
+	Restore(srcs []string, mockDownloadUpload bool) error
 }
 
 // Flusher is an interface represents a flush action.

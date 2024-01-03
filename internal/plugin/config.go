@@ -33,6 +33,7 @@ type Config struct {
 	Override                bool
 	CompressionLevel        int
 	StorageOperationTimeout time.Duration
+	MockDownloadUpload      bool
 
 	Mount []string
 
