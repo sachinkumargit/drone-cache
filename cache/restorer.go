@@ -108,6 +108,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 		return nil
 	}
 
+	start := time.Now()
 	written, err := r.a.Extract(dst, pr)
 	if err != nil {
 		err = fmt.Errorf("extract files from downloaded archive, pipe reader failed, %w", err)
@@ -123,6 +124,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 		"local", dst,
 		"remote", src,
 		"raw size", written,
+		"took", time.Since(start),
 	)
 
 	return nil
