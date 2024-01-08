@@ -83,7 +83,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 
 	go func() {
 		defer internal.CloseWithErrLogf(r.logger, pw, "pw close defer")
-
+		start := time.Now()
 		level.Info(r.logger).Log("msg", "downloading archived directory", "remote", src, "local", dst)
 
 		if mockDownloadUpload {
@@ -94,6 +94,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 				level.Error(r.logger).Log("msg", "pw close", "err", err)
 			}
 		}
+		level.Info(r.logger).Log("msg", "downloaded archived directory", "remote", src, "local", dst, "took", time.Since(start))
 	}()
 
 	level.Info(r.logger).Log("msg", "extracting archived directory", "remote", src, "local", dst)
@@ -107,6 +108,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 		return nil
 	}
 
+	start := time.Now()
 	written, err := r.a.Extract(dst, pr)
 	if err != nil {
 		err = fmt.Errorf("extract files from downloaded archive, pipe reader failed, %w", err)
@@ -122,6 +124,7 @@ func (r restorer) restore(src, dst string, mockDownloadUpload bool) error {
 		"local", dst,
 		"remote", src,
 		"raw size", written,
+		"took", time.Since(start),
 	)
 
 	return nil
