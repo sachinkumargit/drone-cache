@@ -69,6 +69,10 @@ func (r restorer) Restore(dsts []string, mockDownloadUpload bool) error {
 		return fmt.Errorf("restore failed, %w", errs)
 	}
 
+	if mockDownloadUpload {
+		level.Info(r.logger).Log("msg", "cache restored")
+	}
+
 	level.Info(r.logger).Log("msg", "cache restored", "took", time.Since(now))
 
 	return nil
