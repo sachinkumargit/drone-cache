@@ -88,7 +88,10 @@ func (r rebuilder) Rebuild(srcs []string, mockDownloadUpload bool) error {
 	if errs.Err() != nil {
 		return fmt.Errorf("rebuild failed, %w", errs)
 	}
-
+	if mockDownloadUpload {
+		level.Info(r.logger).Log("msg", "cache built")
+		return nil
+	}
 	level.Info(r.logger).Log("msg", "cache built", "took", time.Since(now))
 
 	return nil
